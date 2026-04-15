@@ -11,31 +11,24 @@
       --muted: #888888; --blue: #3b82f6; --danger: #ff3333; --success: #22c55e;
     }
     * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-    
     input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
-
     body { margin: 0; background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 0 20px 30px 20px; min-height: 100vh; }
-    
     .navbar { width: 100%; max-width: 1100px; display: flex; justify-content: center; gap: 30px; padding: 30px 0; border-bottom: 1px solid #222; margin-bottom: 20px; }
     .navbar a { color: var(--muted); text-decoration: none; font-weight: 600; transition: 0.2s; }
     .navbar a:hover { color: var(--text); }
-
     .app { width: 100%; max-width: 1100px; display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
     .main { display: flex; flex-direction: column; gap: 30px; }
     .total-card { padding: 20px 0; }
     .total-card span { color: var(--muted); letter-spacing: 3px; font-size: 0.8rem; text-transform: uppercase; }
     .total-card h1 { font-size: 5rem; margin: 10px 0 0 0; font-weight: 800; }
-    
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .note { height: 200px; border-radius: 35px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 800; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.05); }
     .note:active { transform: scale(0.96); }
     .n20 { background: linear-gradient(135deg, #1e40af, #3b82f6); }
     .n50 { background: linear-gradient(135deg, #92400e, #fbbf24); }
-    
-    .sub-bar { width: 100%; background: #111; border: 1px solid #222; padding: 16px; margin-top: 12px; border-radius: 20px; color: var(--danger); font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .sub-bar { width: 100%; background: #111; border: 1px solid #222; padding: 166px; margin-top: 12px; border-radius: 20px; color: var(--danger); font-weight: 600; cursor: pointer; transition: 0.2s; padding: 16px; }
     .sub-bar:hover { background: #1a1a1a; border-color: var(--danger); }
-    
     .extra-box { background: var(--card); border: 1px solid #222; padding: 25px; border-radius: 30px; margin-top: 10px; }
     .extra-box h3 { margin: 0 0 15px 0; font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
     .extra-input-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -43,21 +36,16 @@
     .extra-btn { background: var(--success); color: black; border: none; padding: 12px 20px; border-radius: 15px; font-weight: 800; cursor: pointer; transition: 0.2s; }
     .extra-btn:hover { transform: scale(1.05); opacity: 0.9; }
     .extra-val { font-size: 1.8rem; font-weight: 800; color: var(--success); text-align: right; }
-
     #extra-history { margin-top: 20px; padding-top: 15px; border-top: 1px dashed #222; font-size: 0.9rem; color: #aaa; max-height: 150px; overflow-y: auto; }
     .extra-log-item { margin-bottom: 8px; display: flex; justify-content: space-between; }
-
     #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 100; }
     .modal-content { background: var(--card); padding: 40px; border-radius: 30px; text-align: center; border: 1px solid #333; }
     .modal-btn { display: block; width: 220px; padding: 15px; margin: 12px 0; border-radius: 15px; border: none; cursor: pointer; font-size: 1.1rem; font-weight: bold; background: #222; color: white; }
-
     .side { background: var(--card); border-radius: 40px; padding: 25px; border: 1px solid #151515; height: calc(100vh - 150px); display: flex; flex-direction: column; position: sticky; top: 30px; }
     .history { flex: 1; overflow-y: auto; }
     .log { padding: 16px; border-radius: 18px; background: #111; margin-bottom: 12px; border-left: 4px solid var(--blue); }
-    
     .reset { margin-top: 20px; background: none; border: 1px solid #222; color: #444; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; transition: 0.2s; font-weight: 600; }
     .reset:hover { border-color: var(--danger); color: var(--danger); background: rgba(255, 51, 51, 0.05); }
-    
     .meta-info { color: var(--muted); font-size: 0.85rem; font-weight: 500; display: block; }
     @media (max-width: 900px) { .app { grid-template-columns: 1fr; } .side { height: auto; position: static; } }
   </style>
@@ -110,9 +98,7 @@
             <div class="extra-val" id="extra-display">€ 0,00</div>
             <button class="reset" style="margin: 0; border:none; padding:0" onclick="resetExtra()">Svuota Risparmi</button>
         </div>
-
-        <div id="extra-history">
-            </div>
+        <div id="extra-history"></div>
       </div>
     </main>
 
@@ -123,130 +109,101 @@
     </aside>
   </div>
 
-  <script>
-    // Inizializzazione database (con supporto per cronologia extra)
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      databaseURL: "INSERISCI_QUI_IL_TUO_URL_FIREBASE"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const dbRef = ref(database, 'wallet_infinite_data');
+
     let db = { total: 0, logs: [], extra: 0, extraLogs: [] };
     let tempVal = 0;
 
-    function openModal(val) { tempVal = val; document.getElementById('modal').style.display = 'flex'; }
-    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+    // Sincronizzazione in tempo reale dal Cloud
+    onValue(dbRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        db = data;
+        updateUI(false);
+      }
+    });
 
-    function addMoney(source) {
+    window.openModal = (val) => { tempVal = val; document.getElementById('modal').style.display = 'flex'; };
+    window.closeModal = () => { document.getElementById('modal').style.display = 'none'; };
+
+    window.addMoney = (source) => {
       db.total += tempVal;
       saveLog(tempVal, 'add', source);
       closeModal();
-    }
+    };
 
-    function op(val) {
-      if (db.total - val < 0) {
-          alert("Fondi insufficienti!");
-          return;
-      }
-      let motivo = prompt("Per cosa hai speso questi soldi?", "Spesa generica");
-      if (motivo === null) return; 
-      if (motivo.trim() === "") motivo = "Altro";
-
+    window.op = (val) => {
+      if (db.total - val < 0) { alert("Fondi insufficienti!"); return; }
+      let motivo = prompt("Per cosa hai speso questi soldi?", "Spesa generica") || "Altro";
       db.total -= val;
       saveLog(val, 'sub', motivo);
-    }
+    };
 
     function saveLog(val, type, source) {
       const ora = new Date();
       const dateStr = ora.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) + ', ' + ora.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+      if (!db.logs) db.logs = [];
       db.logs.push({ val, type, source, date: dateStr });
-      updateUI();
+      updateUI(true);
     }
 
-    // GESTIONE RISPARMI CON MOTIVAZIONE
-    function addExtra() {
+    window.addExtra = () => {
       const inputVal = document.getElementById('extra-money-input');
       const inputReason = document.getElementById('extra-reason-input');
-      
       const val = parseFloat(inputVal.value);
       const reason = inputReason.value.trim() || "Risparmio generico";
-      
-      if (isNaN(val) || val <= 0) {
-        alert("Inserisci un importo valido");
-        return;
-      }
-      
+      if (isNaN(val) || val <= 0) { alert("Inserisci un importo valido"); return; }
       db.extra = (parseFloat(db.extra) || 0) + val;
-      
-      // Crea cronologia extra se non esiste
       if (!db.extraLogs) db.extraLogs = [];
-      
-      const ora = new Date();
-      const dateStr = ora.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
-      
-      db.extraLogs.push({ val, reason, date: dateStr });
+      db.extraLogs.push({ val, reason, date: new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) });
+      inputVal.value = ""; inputReason.value = "";
+      updateUI(true);
+    };
 
-      inputVal.value = ""; 
-      inputReason.value = "";
-      updateUI();
-    }
+    window.resetExtra = () => { if(confirm("Azzerare risparmi?")) { db.extra = 0; db.extraLogs = []; updateUI(true); } };
 
-    function resetExtra() {
-      if(confirm("Vuoi azzerare i risparmi separati e la loro cronologia?")) {
-        db.extra = 0;
-        db.extraLogs = [];
-        updateUI();
-      }
-    }
-
-    function updateUI() {
-      // Formattatore Valuta
+    function updateUI(save) {
       const Euro = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
-
-      // Aggiorna Totali
       document.getElementById('total').textContent = Euro.format(db.total);
-      document.getElementById('extra-display').textContent = Euro.format(db.extra);
+      document.getElementById('extra-display').textContent = Euro.format(db.extra || 0);
 
-      // Aggiorna Movimenti Principali (Wallet)
       const container = document.getElementById('history');
       container.innerHTML = '';
-      [...db.logs].reverse().forEach(log => {
-        const div = document.createElement('div');
-        div.className = `log`;
-        div.style.borderLeftColor = log.type === 'add' ? 'var(--blue)' : 'var(--danger)';
-        div.innerHTML = `
-          <div>
-            <b style="color:${log.type === 'add' ? 'var(--blue)' : 'var(--danger)'}">${log.type === 'add' ? '+' : '-'} ${log.val}€</b>
-            <span class="meta-info">${log.source} • ${log.date}</span>
-          </div>
-        `;
-        container.appendChild(div);
-      });
+      if(db.logs) {
+          [...db.logs].reverse().forEach(log => {
+            const div = document.createElement('div');
+            div.className = 'log';
+            div.style.borderLeftColor = log.type === 'add' ? 'var(--blue)' : 'var(--danger)';
+            div.innerHTML = `<div><b style="color:${log.type === 'add' ? 'var(--blue)' : 'var(--danger)'}">${log.type === 'add' ? '+' : '-'} ${log.val}€</b><span class="meta-info">${log.source} • ${log.date}</span></div>`;
+            container.appendChild(div);
+          });
+      }
 
-      // Aggiorna Cronologia Risparmi
       const extraContainer = document.getElementById('extra-history');
       extraContainer.innerHTML = '';
       if (db.extraLogs && db.extraLogs.length > 0) {
           [...db.extraLogs].reverse().forEach(log => {
               const item = document.createElement('div');
               item.className = 'extra-log-item';
-              item.innerHTML = `
-                <span>${log.reason} <small style="color:#555">(${log.date})</small></span>
-                <b style="color:var(--success)">+${log.val}€</b>
-              `;
+              item.innerHTML = `<span>${log.reason} <small style="color:#555">(${log.date})</small></span><b style="color:var(--success)">+${log.val}€</b>`;
               extraContainer.appendChild(item);
           });
-      } else {
-          extraContainer.innerHTML = '<div style="text-align:center; opacity:0.3">Nessun risparmio registrato</div>';
-      }
+      } else { extraContainer.innerHTML = '<div style="text-align:center; opacity:0.3">Nessun risparmio</div>'; }
 
-      localStorage.setItem('wallet_infinite_data', JSON.stringify(db));
+      if (save) set(dbRef, db);
     }
 
-    function resetAll() { if (confirm('Attenzione! Questo cancellerà tutto il patrimonio e i movimenti. Procedere?')) { db = { total: 0, logs: [], extra: 0, extraLogs: [] }; updateUI(); } }
-
-    // Caricamento dati iniziali
-    const saved = localStorage.getItem('wallet_infinite_data');
-    if (saved) {
-        db = JSON.parse(saved);
-        // Fix per vecchi dati senza la cronologia extra
-        if (!db.extraLogs) db.extraLogs = [];
-    }
-    updateUI();
+    window.resetAll = () => { if (confirm('Vuoi cancellare tutto dal Cloud?')) { set(dbRef, { total: 0, logs: [], extra: 0, extraLogs: [] }); } };
   </script>
 </body>
 </html>
