@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Risparmi - Obiettivi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { 
+      --bg: #000000; --card: #0a0a0a; --text: #ffffff; 
+      --muted: #888888; --blue: #3b82f6; --success: #22c55e; --danger: #ff3333;
+    }
+    * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+    
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    body { margin: 0; background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 0 20px 50px 20px; min-height: 100vh; }
+    
+    .navbar { width: 100%; max-width: 1100px; display: flex; justify-content: center; gap: 30px; padding: 30px 0; border-bottom: 1px solid #222; margin-bottom: 20px; }
+    .navbar a { color: var(--muted); text-decoration: none; font-weight: 600; transition: 0.2s; }
+    .navbar a:hover { color: var(--text); }
+    .active { color: white !important; }
+
+    .container { width: 100%; max-width: 900px; }
+    
+    .creator-box { 
+      background: linear-gradient(145deg, #0f0f0f, #050505); 
+      border: 2px solid #1a1a1a; 
+      padding: 40px; 
+      border-radius: 40px; 
+      margin-bottom: 40px; 
+      text-align: center;
+    }
+    .creator-box h2 { margin-top: 0; font-size: 2rem; font-weight: 800; margin-bottom: 25px; }
+    .input-group-big { display: flex; gap: 15px; max-width: 600px; margin: 0 auto; }
+    .input-group-big input { 
+      flex: 1; background: #111; border: 1px solid #333; padding: 20px; 
+      border-radius: 20px; color: white; outline: none; font-size: 1.2rem;
+    }
+    .btn-create { 
+      background: var(--blue); color: white; border: none; padding: 0 30px; 
+      border-radius: 20px; font-weight: 800; cursor: pointer; transition: 0.3s;
+    }
+    .btn-create:hover { transform: scale(1.05); }
+
+    .goals-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
+    .goal-card { 
+      background: var(--card); border: 1px solid #222; padding: 30px; 
+      border-radius: 35px; position: relative; display: grid;
+      grid-template-columns: 1fr 300px; gap: 20px;
+    }
+    
+    .goal-main h3 { margin: 0; font-size: 1.8rem; color: var(--blue); font-weight: 800; }
+    .goal-main .amount { font-size: 3rem; font-weight: 800; margin: 10px 0; }
+    
+    .goal-controls { display: flex; gap: 10px; margin-top: 15px; }
+    .goal-controls input { 
+      width: 120px; background: #111; border: 1px solid #333; 
+      padding: 12px; border-radius: 15px; color: white; outline: none;
+    }
+    .btn-op { border: none; padding: 12px 20px; border-radius: 15px; font-weight: 800; cursor: pointer; }
+
+    .goal-history { 
+      background: #050505; border-radius: 20px; padding: 15px; 
+      font-size: 0.85rem; height: 180px; overflow-y: auto; border: 1px solid #111;
+    }
+    .hist-title { font-weight: 600; color: var(--muted); margin-bottom: 10px; display: block; font-size: 0.7rem; text-transform: uppercase; }
+    .hist-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #111; }
+    
+    .delete-btn { position: absolute; top: 20px; right: 20px; background: none; border: none; color: #222; cursor: pointer; font-size: 1.2rem; }
+    .delete-btn:hover { color: var(--danger); }
+
+    @media (max-width: 850px) { 
+      .goal-card { grid-template-columns: 1fr; } 
+      .input-group-big { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+      <a href="index.html">Home</a>
+      <a href="vinted.html">Vinted</a>
+      <a href="risparmi.html" class="active">Risparmi</a>
+      <a href="info.html">Info</a>
+  </nav>
+
+  <div class="container">
+    <div class="creator-box">
+      <h2>Nuovo Obiettivo</h2>
+      <div class="input-group-big">
+        <input type="text" id="goal-name" placeholder="Es. Telefono">
+        <button class="btn-create" onclick="createGoal()">CREA</button>
+      </div>
+    </div>
+
+    <div class="goals-grid" id="goals-container"></div>
+  </div>
+
+  <script>
+    // Caricamento sicuro: se la struttura non esiste, la inizializza correttamente
+    let rawData = localStorage.getItem('wallet_infinite_data');
+    let db = rawData ? JSON.parse(rawData) : { total: 0, logs: [], extra: 0, extraLogs: [], goals: [] };
+    
+    // Assicuriamoci che l'array goals esista sempre
+    if (!db.goals) db.goals = [];
+
+    function createGoal() {
+      const nameInput = document.getElementById('goal-name');
+      const name = nameInput.value.trim();
+      
+      if (name === "") {
+        alert("Inserisci un nome per l'obiettivo!");
+        return;
+      }
+
+      const newGoal = {
+        id: Date.now(),
+        name: name,
+        amount: 0,
+        history: []
+      };
+
+      db.goals.push(newGoal);
+      nameInput.value = '';
+      saveAndRender();
+    }
+
+    function updateGoal(id, type) {
+      const input = document.getElementById(`input-${id}`);
+      const val = parseFloat(input.value);
+      
+      if (isNaN(val) || val <= 0) {
+        alert("Inserisci un importo valido!");
+        return;
+      }
+
+      const goal = db.goals.find(g => g.id === id);
+      const ora = new Date();
+      const timeStr = ora.toLocaleDateString('it-IT') + ' ' + ora.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+      
+      if (type === 'add') {
+        goal.amount += val;
+        goal.history.push({ val: `+${val.toFixed(2)}`, date: timeStr, color: 'var(--success)' });
+      } else {
+        if (goal.amount - val < 0) {
+          alert("Fondi insufficienti in questo salvadanaio!");
+          return;
+        }
+        goal.amount -= val;
+        goal.history.push({ val: `-${val.toFixed(2)}`, date: timeStr, color: 'var(--danger)' });
+      }
+
+      input.value = '';
+      saveAndRender();
+    }
+
+    function deleteGoal(id) {
+      if (confirm("Vuoi davvero eliminare questo obiettivo?")) {
+        db.goals = db.goals.filter(g => g.id !== id);
+        saveAndRender();
+      }
+    }
+
+    function saveAndRender() {
+      localStorage.setItem('wallet_infinite_data', JSON.stringify(db));
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('goals-container');
+      container.innerHTML = '';
+      
+      if (db.goals.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--muted);">Nessun obiettivo attivo. Creane uno sopra!</p>';
+        return;
+      }
+
+      db.goals.forEach(goal => {
+        // Genera cronologia
+        let historyHTML = "";
+        if (goal.history && goal.history.length > 0) {
+          historyHTML = [...goal.history].reverse().map(h => `
+            <div class="hist-item">
+              <span style="color:${h.color}; font-weight:800">${h.val}€</span>
+              <span style="color:var(--muted)">${h.date}</span>
+            </div>
+          `).join('');
+        } else {
+          historyHTML = '<div style="color:#222; text-align:center; margin-top:20px;">Ancora nessun movimento</div>';
+        }
+
+        container.innerHTML += `
+          <div class="goal-card">
+            <button class="delete-btn" onclick="deleteGoal(${goal.id})">×</button>
+            <div class="goal-main">
+              <h3>${goal.name}</h3>
+              <div class="amount">€ ${goal.amount.toLocaleString('it-IT', {minimumFractionDigits: 2})}</div>
+              <div class="goal-controls">
+                <input type="number" id="input-${goal.id}" placeholder="€">
+                <button class="btn-op" style="background:var(--success); color:black" onclick="updateGoal(${goal.id}, 'add')">Aggiungi</button>
+                <button class="btn-op" style="background:var(--danger); color:white" onclick="updateGoal(${goal.id}, 'sub')">Togli</button>
+              </div>
+            </div>
+            <div class="goal-history">
+              <span class="hist-title">Cronologia</span>
+              ${historyHTML}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Avvio iniziale
+    render();
+  </script>
+</body>
+</html>
